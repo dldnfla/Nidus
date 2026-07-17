@@ -158,3 +158,24 @@ test('tc_2015 | 투표 중복 참여', async ({ page }) => {
   await page.getByText('선택지 B').click();
   await expect(page.getByText('선택지 B')).toHaveClass(/selected|active/);
 });
+
+test('tc_2019 | 투표 생성 - 선택지 텍스트 중복 시 득표가 선택지별로 분리된다', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: '투표' }).click();
+  await page.getByRole('button', { name: '+' }).click();
+  await page.getByPlaceholder('질문을 입력해주세요').fill('오늘 저녁 뭐 먹지');
+  await page.getByPlaceholder('선택지 1').fill('치킨');
+  await page.getByPlaceholder('선택지 2').fill('치킨');
+  await page.getByRole('button', { name: '만들기' }).click();
+
+  const card = page.locator('.vote-card', { hasText: '오늘 저녁 뭐 먹지' });
+  const chickenBtns = card.getByRole('button', { name: '치킨' });
+  await expect(chickenBtns).toHaveCount(2);
+
+  // 두 번째 "치킨"만 클릭
+  await chickenBtns.nth(1).click();
+
+  // 두 번째 선택지만 내 선택으로 표시되고, 첫 번째는 영향받지 않아야 한다
+  await expect(chickenBtns.nth(1)).toHaveClass(/selected|active/);
+  await expect(chickenBtns.nth(0)).not.toHaveClass(/selected|active/);
+});
