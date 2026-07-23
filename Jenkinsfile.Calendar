@@ -19,7 +19,7 @@ pipeline {
   stages {
     stage('Install deps') {
       steps {
-        sh 'npm ci || npm install'
+        sh 'npm install'
         sh 'npx playwright install --with-deps chromium'
       }
     }
