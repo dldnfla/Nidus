@@ -1,0 +1,57 @@
+pipeline {
+  agent {
+    docker {
+      image 'node:20-bookworm'
+      args '-u root:root'
+    }
+  }
+
+  environment {
+    // playwright.config.ts가 이 값으로 리포트 폴더 이름을 결정함
+    TEST_FILE = 'vote'
+  }
+
+  options {
+    timestamps()
+    buildDiscarder(logRotator(numToKeepStr: '30'))
+  }
+
+  stages {
+    stage('Install deps') {
+      steps {
+        sh 'npm ci || npm install'
+        sh 'npx playwright install --with-deps chromium'
+      }
+    }
+
+    stage('Run tests') {
+      steps {
+        catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+          sh 'npx playwright test tests/vote.spec.ts'
+        }
+      }
+    }
+  }
+
+  post {
+    always {
+      script {
+        env.REPORT_DIR = sh(
+          script: "ls -td results/*/ 2>/dev/null | head -1 | xargs -r basename",
+          returnStdout: true
+        ).trim()
+      }
+
+      archiveArtifacts artifacts: "results/${env.REPORT_DIR}/**", allowEmptyArchive: true
+
+      publishHTML(target: [
+        reportName: 'Nidus Playwright Report (vote)',
+        reportDir: "results/${env.REPORT_DIR}",
+        reportFiles: 'index.html',
+        keepAll: true,
+        alwaysLinkToLastBuild: true,
+        allowMissing: true
+      ])
+    }
+  }
+}
