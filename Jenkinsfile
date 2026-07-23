@@ -16,8 +16,8 @@ pipeline {
     stage('Install deps') {
       steps {
         sh 'npm ci || npm install'
-        // package.json에 명시된 버전과 항상 맞는 브라우저를 설치
-        sh 'npx playwright install --with-deps chromium firefox webkit'
+        // package.json에 명시된 버전과 항상 맞는 브라우저를 설치 (지금은 chromium 하나만 사용)
+        sh 'npx playwright install --with-deps chromium'
       }
     }
 
